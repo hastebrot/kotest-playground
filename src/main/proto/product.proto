@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option java_package = "playground";
+option java_outer_classname = "Proto";
+option java_multiple_files = true;
+
+package playground;
+
+message ProtoProduct {
+  string code = 1;
+  repeated ProtoColorVariant color_variants = 2;
+  string name = 3;
+  string description = 4;
+  string brand = 5;
+}
+
+message ProtoColorVariant {
+  string code = 1;
+  repeated ProtoSizeVariant size_variants = 2;
+  string color_name = 3;
+  string color_group_name = 4;
+}
+
+message ProtoSizeVariant {
+  string code = 1;
+  ProtoPrice price = 2;
+  string size_name = 3;
+}
+
+message ProtoPrice {
+  string currency = 1;
+  string current_price = 2;
+  string original_price = 3;
+}
