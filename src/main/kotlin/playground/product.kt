@@ -1,6 +1,7 @@
 package playground
 
 import com.google.protobuf.util.JsonFormat
+import playground.proto.ProtoProduct
 
 fun main() {
     val product = ProtoProduct.newBuilder().build()

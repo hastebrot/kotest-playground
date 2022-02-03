@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option java_package = "playground";
+option java_package = "playground.proto";
 option java_outer_classname = "Proto";
 option java_multiple_files = true;
 
-package playground;
+package playground.proto;
 
 message ProtoProduct {
   string code = 1;

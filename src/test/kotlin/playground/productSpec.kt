@@ -17,6 +17,7 @@ import io.mockk.impl.recording.JvmAutoHinter
 import io.mockk.impl.stub.StubRepository
 import io.mockk.impl.verify.UnorderedCallVerifier
 import io.mockk.mockk
+import playground.proto.ProtoProduct
 
 interface ProductService {
     suspend fun storeProduct(objectId: String, product: ProtoProduct)
@@ -85,7 +86,21 @@ class ProductSpec : DescribeSpec({
             )
             verifiedCalls.toString().shouldBe("OK(verifiedCalls=[" +
                     "ProductService(#5).storeProduct(id, , continuation {})" +
-                    "])")
+                    "])"
+            )
+
+            println(stubRepo.allStubs.map { it.allRecordedCalls() })
+            println(stubRepo.allStubs.map { it.toStr() })
+
+            // recordedCall:
+            // - retValue: Any?
+            // - retType: KClass<*>
+            // - isRetValueMock: Boolean
+            // - matcher: InvocationMatcher
+            //   - self: Any
+            //   - method: MethodDescription
+            //   - args: List<Matcher<Any>>
+            //   - allAny: Boolean
         }
     }
 })
