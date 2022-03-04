@@ -12,6 +12,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.impl.JvmMockKGateway
 import io.mockk.impl.eval.VerifyBlockEvaluator
+import io.mockk.impl.log.SafeToString
 import io.mockk.impl.recording.CommonCallRecorder
 import io.mockk.impl.recording.JvmAutoHinter
 import io.mockk.impl.stub.StubRepository
@@ -52,12 +53,12 @@ class ProductSpec : DescribeSpec({
             productService.storeProduct("id", product)
 
             // then:
-            val gateway = MockKGateway.implementation() as JvmMockKGateway
-            val stubRepo = gateway.stubRepo
-            val safeToString = gateway.stubRepo.safeToString
+            val mockGateway = MockKGateway.implementation() as JvmMockKGateway
+            val stubRepository = mockGateway.gatewayAccess.stubRepository
+            val safeToString = mockGateway.gatewayAccess.safeToString
+            val callRecorder = mockGateway.gatewayAccess.callRecorder() as CommonCallRecorder
 
-            val callRecorder = gateway.callRecorder as CommonCallRecorder
-            val params = VerificationParameters(
+            val verificationParams = VerificationParameters(
                 ordering = Ordering.UNORDERED,
                 min = 1,
                 max = 1,
@@ -67,30 +68,35 @@ class ProductSpec : DescribeSpec({
 
             val recordedCalls = recordCalls(
                 callRecorder = callRecorder,
-                stubRepo = stubRepo,
-                params = params,
+                stubRepository = stubRepository,
+                verificationParams = verificationParams,
                 mockBlock = null,
                 coMockBlock = {
                     productService.storeProduct(eq("id"), product)
                 }
             )
-            recordedCalls.toString().shouldBe("[" +
+
+            val verifiedCalls = verifyCalls(
+                stubRepository = stubRepository,
+                safeToString = safeToString,
+                verificationSequence = recordedCalls,
+                verificationParams = verificationParams
+            )
+
+            println(stubRepository.allStubs.sortedBy { it.name }.map { it.toStr() })
+            println(stubRepository.allStubs.sortedBy { it.name }.map { it.allRecordedCalls() })
+
+            recordedCalls.toString().shouldBe(
+                "[" +
                     "RecordedCall(retValue=Unit(child of #5#8), retType=Unit, isRetValueMock=true " +
                     "matcher=ProductService(#5).storeProduct(eq(id), eq(), any())))" +
                     "]"
             )
-
-            val verifiedCalls = UnorderedCallVerifier(stubRepo, safeToString).verify(
-                verificationSequence = recordedCalls,
-                params = params
-            )
-            verifiedCalls.toString().shouldBe("OK(verifiedCalls=[" +
+            verifiedCalls.toString().shouldBe(
+                "OK(verifiedCalls=[" +
                     "ProductService(#5).storeProduct(id, , continuation {})" +
                     "])"
             )
-
-            println(stubRepo.allStubs.map { it.allRecordedCalls() })
-            println(stubRepo.allStubs.map { it.toStr() })
 
             // recordedCall:
             // - retValue: Any?
@@ -105,35 +111,52 @@ class ProductSpec : DescribeSpec({
     }
 })
 
-fun recordCalls(
+private fun verifyCalls(
+    stubRepository: StubRepository,
+    safeToString: SafeToString,
+    verificationSequence: List<RecordedCall>,
+    verificationParams: VerificationParameters
+): MockKGateway.VerificationResult {
+    val verifier = UnorderedCallVerifier(stubRepository, safeToString)
+    return verifier.verify(
+        verificationSequence = verificationSequence,
+        params = verificationParams
+    )
+}
+
+private fun recordCalls(
     callRecorder: CallRecorder,
-    stubRepo: StubRepository,
-    params: VerificationParameters,
+    stubRepository: StubRepository,
+    verificationParams: VerificationParameters,
     mockBlock: (MockKVerificationScope.() -> Unit)?,
     coMockBlock: (suspend MockKVerificationScope.() -> Unit)?
 ): List<RecordedCall> {
-    class DerivedCallRecorder(base: CallRecorder) : CallRecorder by base {
-        override fun reset() {}
+    class DerivedCallRecorder(private val base: CallRecorder) : CallRecorder by base {
+        override fun reset() = Unit
     }
+
+    fun copyRecordedCalls(recordedCalls: List<RecordedCall>) = recordedCalls.toList()
 
     val derivedCallRecorder = DerivedCallRecorder(callRecorder)
 
-    val verifier = VerifyBlockEvaluator(
+    val evaluator = VerifyBlockEvaluator(
         callRecorder = { derivedCallRecorder },
-        stubRepo = stubRepo,
+        stubRepo = stubRepository,
         autoHinterFactory = ::JvmAutoHinter
     )
 
-    return try {
-        verifier.verify(
-            params = params,
+    val recordedCalls = try {
+        evaluator.verify(
+            params = verificationParams,
             mockBlock = mockBlock,
             coMockBlock = coMockBlock,
         )
-        derivedCallRecorder.calls.toList()
+        copyRecordedCalls(callRecorder.calls)
     } catch (ignore: Throwable) {
-        derivedCallRecorder.calls.toList()
+        copyRecordedCalls(callRecorder.calls)
     } finally {
         callRecorder.reset()
     }
+
+    return recordedCalls
 }
