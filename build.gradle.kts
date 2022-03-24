@@ -1,3 +1,5 @@
+import com.google.protobuf.gradle.GenerateProtoTask
+import com.google.protobuf.gradle.ProtobufExtract
 import com.google.protobuf.gradle.generateProtoTasks
 import com.google.protobuf.gradle.protoc
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -7,7 +9,7 @@ val kotlinVersion = "1.6.10"
 val protobufVersion = "3.19.4"
 val junitVersion = "5.8.2"
 val kotestVersion = "5.1.0"
-val mockkVersion = "1.12.2"
+val mockkVersion = "1.12.3"
 
 plugins {
     val kotlinPluginVersion = "1.6.10"
@@ -57,6 +59,7 @@ java {
 tasks {
     withType<KotlinCompile> {
         kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+        dependsOn("generateProto")
     }
 
     withType<Test> {
@@ -96,6 +99,14 @@ protobuf {
             task.doFirst {
                 delete(task.outputs)
             }
+        }
+
+        project.tasks.withType<ProtobufExtract> {
+            group = "source generation"
+        }
+
+        project.tasks.withType<GenerateProtoTask> {
+            group = "source generation"
         }
     }
 }
