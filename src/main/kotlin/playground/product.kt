@@ -6,7 +6,9 @@ import playground.proto.ProtoProduct
 fun main() {
     val product = ProtoProduct.newBuilder().build()
 
-    val jsonPrinter = JsonFormat.printer().includingDefaultValueFields()
+    val jsonPrinter = JsonFormat.printer()
+        .includingDefaultValueFields()
+        .omittingInsignificantWhitespace()
     jsonPrinter.print(product).println
 }
 

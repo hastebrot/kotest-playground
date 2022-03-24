@@ -12,6 +12,7 @@ message ProtoProduct {
   string name = 3;
   string description = 4;
   string brand = 5;
+  optional int32 available_quantity = 6;
 }
 
 message ProtoColorVariant {
@@ -19,12 +20,14 @@ message ProtoColorVariant {
   repeated ProtoSizeVariant size_variants = 2;
   string color_name = 3;
   string color_group_name = 4;
+  optional int32 available_quantity = 5;
 }
 
 message ProtoSizeVariant {
   string code = 1;
   ProtoPrice price = 2;
   string size_name = 3;
+  optional int32 available_quantity = 4;
 }
 
 message ProtoPrice {
