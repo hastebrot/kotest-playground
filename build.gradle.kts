@@ -2,7 +2,7 @@ import com.google.protobuf.gradle.generateProtoTasks
 import com.google.protobuf.gradle.protoc
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val gradleWrapperVersion = "7.3.3"
+val gradleWrapperVersion = "7.4.1"
 val kotlinVersion = "1.6.10"
 val protobufVersion = "3.19.4"
 val junitVersion = "5.8.2"
@@ -71,6 +71,11 @@ tasks {
             info { events = debug.events }
         }
         outputs.upToDateWhen { false }
+    }
+
+    withType<Test>().configureEach {
+        reports.html.required.set(false)
+        reports.junitXml.required.set(false)
     }
 
     withType<Wrapper> {
